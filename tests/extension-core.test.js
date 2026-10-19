@@ -11,10 +11,11 @@ import {
   validateLimit
 } from "../extension-core.js";
 
-function makeFakes({ initial = {}, failRuleUpdate = false } = {}) {
+function makeFakes({ initial = {}, failRuleUpdate = false, beforeRuleUpdate = async () => {} } = {}) {
   const data = { ...initial };
   const rules = new Map();
   const updates = [];
+  let shouldFailRuleUpdate = failRuleUpdate;
   const storage = {
     async get(keys) {
       return Object.fromEntries(keys.filter((key) => Object.hasOwn(data, key)).map((key) => [key, data[key]]));
@@ -29,7 +30,8 @@ function makeFakes({ initial = {}, failRuleUpdate = false } = {}) {
   const dnr = {
     async updateDynamicRules({ removeRuleIds, addRules }) {
       updates.push({ removeRuleIds, addRules });
-      if (failRuleUpdate) {
+      await beforeRuleUpdate();
+      if (shouldFailRuleUpdate) {
         throw new Error("simulated DNR failure");
       }
       for (const id of removeRuleIds) rules.delete(id);
@@ -37,7 +39,13 @@ function makeFakes({ initial = {}, failRuleUpdate = false } = {}) {
     }
   };
 
-  return { controller: createSettingsController({ storage, dnr }), data, rules, updates };
+  return {
+    controller: createSettingsController({ storage, dnr }),
+    data,
+    rules,
+    updates,
+    setRuleUpdateFailure(value) { shouldFailRuleUpdate = value; }
+  };
 }
 
 test("validates positive safe whole numbers and rejects malformed values", () => {
@@ -97,8 +105,46 @@ test("rejects invalid changes and rolls storage back when the DNR update fails",
   await assert.rejects(invalid.controller.applyLimit("0"), /positive whole number/);
   assert.equal(invalid.updates.length, 0);
 
-  const failing = makeFakes({ initial: { [SETTINGS_KEY]: 50 }, failRuleUpdate: true });
+  const failing = makeFakes({ initial: { [SETTINGS_KEY]: 50 } });
+  await failing.controller.restore();
+  failing.setRuleUpdateFailure(true);
   await assert.rejects(failing.controller.applyLimit(200), /Could not update the request rule/);
   assert.equal(failing.data[SETTINGS_KEY], 50);
+  assert.equal(
+    failing.rules.get(ANALYTICS_RULE_ID).action.redirect.transform.queryTransform.addOrReplaceParams[0].value,
+    "50"
+  );
   assert.match(failing.data[ERROR_KEY], /could not be updated/i);
+});
+
+test("serializes overlapping changes and leaves storage and the rule at the latest value", async () => {
+  let releaseFirstUpdate;
+  let firstUpdateStartedResolve;
+  let updateNumber = 0;
+  const firstUpdateStarted = new Promise((resolve) => { firstUpdateStartedResolve = resolve; });
+  const { controller, data, rules } = makeFakes({
+    initial: { [SETTINGS_KEY]: 50 },
+    beforeRuleUpdate: async () => {
+      updateNumber += 1;
+      if (updateNumber === 1) {
+        firstUpdateStartedResolve();
+        await new Promise((resolve) => { releaseFirstUpdate = resolve; });
+      }
+    }
+  });
+
+  const firstChange = controller.applyLimit(100);
+  await firstUpdateStarted;
+  const secondChange = controller.applyLimit(250);
+  releaseFirstUpdate();
+
+  assert.deepEqual(await Promise.all([firstChange, secondChange]), [
+    { ok: true, limit: 100 },
+    { ok: true, limit: 250 }
+  ]);
+  assert.equal(data[SETTINGS_KEY], 250);
+  assert.equal(
+    rules.get(ANALYTICS_RULE_ID).action.redirect.transform.queryTransform.addOrReplaceParams[0].value,
+    "250"
+  );
 });

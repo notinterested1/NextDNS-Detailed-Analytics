@@ -1,10 +1,9 @@
 import { DEFAULT_LIMIT, validateLimit } from "./extension-core.js";
 
 const input = document.querySelector("#limit-input");
-const currentLimit = document.querySelector("#current-limit");
 const form = document.querySelector("#limit-form");
 const message = document.querySelector("#form-message");
-const applyButton = form.querySelector("button[type='submit']");
+const saveButton = form.querySelector("button[type='submit']");
 
 function showMessage(text, kind = "") {
   message.textContent = text;
@@ -18,7 +17,6 @@ async function loadState() {
       throw new Error(state?.error || "Could not read the saved setting.");
     }
 
-    currentLimit.textContent = String(state.limit ?? DEFAULT_LIMIT);
     input.value = String(state.limit ?? DEFAULT_LIMIT);
     if (state.error) {
       showMessage(state.error, "error");
@@ -26,11 +24,15 @@ async function loadState() {
       showMessage(state.notice, "notice");
     }
   } catch {
-    currentLimit.textContent = String(DEFAULT_LIMIT);
     input.value = String(DEFAULT_LIMIT);
     showMessage("Could not load the saved setting. Close and reopen this popup.", "error");
   }
 }
+
+input.addEventListener("input", () => {
+  input.removeAttribute("aria-invalid");
+  showMessage("");
+});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -45,7 +47,8 @@ form.addEventListener("submit", async (event) => {
   }
 
   input.removeAttribute("aria-invalid");
-  applyButton.disabled = true;
+  input.disabled = true;
+  saveButton.disabled = true;
   try {
     const result = await chrome.runtime.sendMessage({
       type: "APPLY_LIMIT",
@@ -55,13 +58,13 @@ form.addEventListener("submit", async (event) => {
       throw new Error(result?.error || "Could not apply this limit.");
     }
 
-    currentLimit.textContent = String(result.limit);
     input.value = String(result.limit);
-    showMessage(`Limit set to ${result.limit}. Refresh the NextDNS dashboard to reload analytics.`);
+    showMessage("Saved. Refresh the dashboard to load analytics.");
   } catch (error) {
     showMessage(error.message || "Could not apply this limit. Please try again.", "error");
   } finally {
-    applyButton.disabled = false;
+    input.disabled = false;
+    saveButton.disabled = false;
   }
 });
 

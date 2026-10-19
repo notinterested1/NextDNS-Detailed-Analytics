@@ -5,8 +5,8 @@ import os from "node:os";
 import path from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 
-const DEFAULT_EDGE_PATH = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
-const edgePath = process.argv[2] || DEFAULT_EDGE_PATH;
+const DEFAULT_BROWSER_PATH = "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe";
+const browserPath = process.argv[2] || DEFAULT_BROWSER_PATH;
 const sourceExtension = path.resolve(process.cwd());
 const smokeRequest = {
   url: "https://api.nextdns.io/profiles/smoke-test-profile/analytics/domains?from=2026-10-19T00%3A00%3A00Z&limit=13&to=2026-10-19T01%3A00%3A00Z",
@@ -61,13 +61,15 @@ async function readJson(url) {
 
 async function waitForTarget(debugPort, predicate, timeoutMs = 20000) {
   const started = Date.now();
+  let lastTargets = [];
   while (Date.now() - started < timeoutMs) {
-    const targets = await readJson(`http://127.0.0.1:${debugPort}/json/list`);
-    const target = targets.find(predicate);
+    lastTargets = await readJson(`http://127.0.0.1:${debugPort}/json/list`);
+    const target = lastTargets.find(predicate);
     if (target) return target;
     await delay(200);
   }
-  throw new Error("Timed out waiting for the browser extension page.");
+  const targetSummary = lastTargets.map(({ type, url }) => ({ type, url }));
+  throw new Error(`Timed out waiting for the browser extension page. Browser targets: ${JSON.stringify(targetSummary)}`);
 }
 
 async function evaluate(client, expression, timeoutMs = 15000) {
@@ -98,14 +100,14 @@ try {
   testExtensionDirectory = path.join(tempRoot, "extension");
   await mkdir(testExtensionDirectory);
 
-  for (const file of ["manifest.json", "background.js", "extension-core.js", "popup.html", "popup.css", "popup.js"]) {
+  for (const file of ["manifest.json", "background.js", "extension-core.js", "popup.html", "popup.js"]) {
     await copyFile(path.join(sourceExtension, file), path.join(testExtensionDirectory, file));
   }
   const testManifest = JSON.parse(await readFile(path.join(testExtensionDirectory, "manifest.json"), "utf8"));
   testManifest.permissions.push("declarativeNetRequestFeedback");
   await writeFile(path.join(testExtensionDirectory, "manifest.json"), JSON.stringify(testManifest, null, 2));
 
-  browserProcess = spawn(edgePath, [
+  browserProcess = spawn(browserPath, [
     "--headless=new",
     "--disable-gpu",
     "--no-first-run",
@@ -130,12 +132,12 @@ try {
       const [port] = (await readFile(activePortFile, "utf8")).trim().split(/\r?\n/);
       debugPort = Number(port);
     } catch {
-      if (launchError) throw new Error(`Could not launch Edge: ${launchError.message}`);
-      if (browserProcess.exitCode !== null) throw new Error("Edge exited before enabling its test debugging endpoint.");
+      if (launchError) throw new Error(`Could not launch the browser: ${launchError.message}`);
+      if (browserProcess.exitCode !== null) throw new Error("The browser exited before enabling its test debugging endpoint.");
       await delay(200);
     }
   }
-  assert.ok(debugPort, "Edge did not start its temporary debugging endpoint.");
+  assert.ok(debugPort, "The browser did not start its temporary debugging endpoint.");
 
   const version = await readJson(`http://127.0.0.1:${debugPort}/json/version`);
   browserClient = createCdpClient(version.webSocketDebuggerUrl);
@@ -152,6 +154,9 @@ try {
   const extensionClient = createCdpClient(extensionPage.webSocketDebuggerUrl);
   await extensionClient.ready();
   await extensionClient.send("Runtime.enable");
+
+  const manifest = await evaluate(extensionClient, "chrome.runtime.getManifest()");
+  assert.equal(manifest.name, "NextDNS Detailed Analytics", "The browser page is not the test extension.");
 
   const rules = await evaluate(extensionClient, "chrome.declarativeNetRequest.getDynamicRules()");
   const rule = rules.find((candidate) => candidate.id === 1);
@@ -170,7 +175,7 @@ try {
   );
   assert.ok(
     matchResult.matchedRules.some((matchedRule) => matchedRule.ruleId === 1),
-    "Edge's DNR engine did not match an analytics request from the NextDNS dashboard."
+    "The browser's DNR engine did not match an analytics request from the NextDNS dashboard."
   );
 
   const unrelatedResult = await evaluate(
@@ -182,7 +187,7 @@ try {
   );
   assert.deepEqual(unrelatedResult.matchedRules, [], "The rule should not match a non-analytics API path.");
 
-  console.log("PASS: Edge installed the dynamic rule; its DNR engine matched the dashboard analytics request and excluded a non-analytics API path.");
+  console.log("PASS: The browser installed the dynamic rule; its DNR engine matched the dashboard analytics request and excluded a non-analytics API path.");
   console.log("The production query transform was also checked by the Node unit test.");
   extensionClient.close();
 } finally {

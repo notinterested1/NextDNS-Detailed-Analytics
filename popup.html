@@ -3,29 +3,95 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>NextDNS Detailed Analytics</title>
-    <link rel="stylesheet" href="popup.css">
+    <meta name="color-scheme" content="light dark">
+    <title>NextDNS analytics</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font: 13px/1.45 system-ui, sans-serif;
+        --background: #fff;
+        --text: #20252c;
+        --muted: #606a78;
+        --border: #cbd1d8;
+        --field: #fff;
+        --primary: #315fbe;
+        --primary-text: #fff;
+        --focus: #5079d0;
+        --success: #176c48;
+        --error: #b42318;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --background: #202124;
+          --text: #e7e8ea;
+          --muted: #b0b5bd;
+          --border: #5d626a;
+          --field: #292b2f;
+          --primary: #6389db;
+          --primary-text: #101318;
+          --focus: #8eafff;
+          --success: #7bd5a5;
+          --error: #ff8b80;
+        }
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        width: 320px;
+        margin: 0;
+        background: var(--background);
+        color: var(--text);
+      }
+
+      main { padding: 18px; }
+      h1 { margin: 0; font-size: 16px; }
+      .description { margin: 5px 0 17px; color: var(--muted); }
+      label { display: block; margin-bottom: 6px; font-weight: 600; }
+      .controls { display: flex; gap: 8px; }
+
+      input, button {
+        min-height: 36px;
+        border-radius: 5px;
+        font: inherit;
+      }
+
+      input {
+        min-width: 0;
+        flex: 1;
+        padding: 7px 9px;
+        border: 1px solid var(--border);
+        background: var(--field);
+        color: var(--text);
+      }
+
+      button { cursor: pointer; }
+      input:focus-visible, button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+      .primary {
+        padding: 7px 15px;
+        border: 1px solid var(--primary);
+        background: var(--primary);
+        color: var(--primary-text);
+        font-weight: 600;
+      }
+
+      .primary:disabled { cursor: wait; opacity: .65; }
+      .secondary { margin-top: 12px; padding: 3px 0; border: 0; background: none; color: var(--text); }
+      .message { min-height: 19px; margin: 8px 0 0; color: var(--success); }
+      .message.error { color: var(--error); }
+      .message.notice { color: var(--muted); }
+    </style>
   </head>
   <body>
-    <main class="panel">
-      <header class="heading">
-        <div class="mark" aria-hidden="true">N</div>
-        <div>
-          <p class="eyebrow">UNOFFICIAL EXTENSION</p>
-          <h1>NextDNS Detailed Analytics</h1>
-        </div>
-      </header>
-
-      <p class="intro">Choose how many entries the NextDNS dashboard requests for analytics.</p>
-
-      <section class="current" aria-live="polite">
-        <span>Current configured limit</span>
-        <strong id="current-limit">50</strong>
-      </section>
+    <main>
+      <h1>NextDNS analytics</h1>
+      <p class="description">Set how many entries the dashboard requests.</p>
 
       <form id="limit-form" novalidate>
-        <label for="limit-input">Analytics entry limit</label>
-        <div class="input-row">
+        <label for="limit-input">Entry limit</label>
+        <div class="controls">
           <input
             id="limit-input"
             name="limit"
@@ -35,18 +101,14 @@
             inputmode="numeric"
             value="50"
             required
-            aria-describedby="limit-help form-message"
+            aria-describedby="form-message"
           >
-          <button class="primary" type="submit">Apply</button>
+          <button class="primary" type="submit">Save</button>
         </div>
-        <p id="limit-help" class="help">Enter a positive whole number.</p>
         <p id="form-message" class="message" role="status" aria-live="polite"></p>
       </form>
 
       <button id="open-nextdns" class="secondary" type="button">Open NextDNS</button>
-
-      <p class="refresh-note">After changing the limit, refresh the NextDNS dashboard to reload analytics.</p>
-      <p class="footnote">This extension is not affiliated with or endorsed by NextDNS.</p>
     </main>
     <script type="module" src="popup.js"></script>
   </body>

@@ -10,7 +10,7 @@ The extension does not ask for a NextDNS API key, profile ID, OAuth access, or s
 
 The background service worker maintains one dynamic declarative network request (DNR) rule. It matches requests to `https://api.nextdns.io/profiles/*/analytics/*` initiated by `my.nextdns.io`, with resource types `main_frame` and `xmlhttprequest`. The rule uses a URL query transform to add or replace `limit` while retaining the matching request's destination and other query parameters. It does not inspect request or response bodies.
 
-The selected value is stored in `chrome.storage.local`. On install and browser startup, the service worker restores the saved value and replaces the extension's stable rule ID instead of adding another rule. When you apply a setting, the extension saves it, updates the rule, and reports failures in the popup. Refresh the NextDNS dashboard after applying a change so it reloads its analytics requests.
+The selected value is stored in `chrome.storage.local`. On install and browser startup, the service worker restores the saved value and replaces the extension's stable rule ID instead of adding another rule. Setting changes are serialized so overlapping updates cannot leave storage and the rule out of sync. If an update fails, the extension restores the last saved value and reports the error in the popup. Refresh the NextDNS dashboard after saving so it reloads its analytics requests.
 
 ## Privacy
 
@@ -49,9 +49,9 @@ Requires Node.js with the built-in test runner. Run:
 node --test
 ```
 
-The tests cover limit validation, local persistence, dynamic rule replacement and restoration, failure rollback, and the query transform's intended URL behavior. These unit tests verify the generated DNR rule shape and simulate its query transformation; they do not replace a browser-level test against the Chrome or Edge DNR engine.
+The tests cover limit validation, local persistence, serialized overlapping updates, dynamic rule replacement and restoration, failure rollback, and the query transform's intended URL behavior. These unit tests verify the generated DNR rule shape and simulate its query transformation; they do not replace a browser-level test against the Chrome or Edge DNR engine.
 
-An optional Edge smoke test loads a temporary copy of the extension into an isolated profile and uses Edge's DNR match-outcome API to check that a dashboard-origin analytics request matches the installed rule. The test copy adds `declarativeNetRequestFeedback` for development diagnostics; the production manifest does not request it. The test performs no NextDNS API request and uses no account data. Run it on Windows with Edge installed:
+An optional browser smoke test loads a temporary copy of the extension into an isolated profile and uses the browser's DNR match-outcome API to check that a dashboard-origin analytics request matches the installed rule. The test copy adds `declarativeNetRequestFeedback` for development diagnostics; the production manifest does not request it. The test performs no NextDNS API request and uses no account data. On Windows, it uses Edge by default:
 
 ```sh
 npm run test:browser
@@ -64,7 +64,8 @@ The smoke test does not contact NextDNS or use a user's profile ID or credential
 - `manifest.json`: Manifest V3 permissions, popup, and service worker.
 - `background.js`: restores settings and receives popup requests.
 - `extension-core.js`: validation, DNR rule construction, and injectable settings controller.
-- `popup.html`, `popup.css`, `popup.js`: the standalone settings popup.
+- `popup.html`: popup markup and its compact, theme-aware styling.
+- `popup.js`: popup behavior and browser messaging.
 - `tests/`: Node tests for validation, persistence, and rule lifecycle.
 
 ## License
