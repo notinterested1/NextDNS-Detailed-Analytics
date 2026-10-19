@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "NextDNS Detailed Analytics",
+  "short_name": "NextDNS Analytics",
+  "version": "1.0.0",
+  "description": "Choose the analytics entry limit used by the NextDNS dashboard.",
+  "permissions": [
+    "declarativeNetRequestWithHostAccess",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://api.nextdns.io/*",
+    "https://my.nextdns.io/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "NextDNS Detailed Analytics",
+    "default_popup": "popup.html"
+  }
+}

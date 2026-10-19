@@ -1,0 +1,166 @@
+:root {
+  color-scheme: light;
+  font-family: Inter, "Segoe UI", sans-serif;
+  color: #17233b;
+  background: #f5f7fc;
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  width: 360px;
+  margin: 0;
+}
+
+.panel {
+  padding: 22px;
+  background: #fff;
+}
+
+.heading {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.mark {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 13px;
+  background: linear-gradient(145deg, #2e6bff, #7348e8);
+  color: white;
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: #65738d;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+
+h1 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.25;
+}
+
+.intro {
+  margin: 18px 0;
+  color: #52617b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.current {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 13px 14px;
+  border: 1px solid #e3e9f4;
+  border-radius: 12px;
+  background: #f8faff;
+  color: #52617b;
+  font-size: 12px;
+}
+
+.current strong {
+  color: #2455d7;
+  font-size: 19px;
+}
+
+form { margin-top: 19px; }
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.input-row {
+  display: flex;
+  gap: 9px;
+}
+
+input {
+  min-width: 0;
+  flex: 1;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e5;
+  border-radius: 9px;
+  color: #17233b;
+  font: inherit;
+  font-size: 14px;
+}
+
+input:focus-visible, button:focus-visible {
+  outline: 3px solid #9eb7ff;
+  outline-offset: 2px;
+}
+
+button {
+  border: 0;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.primary {
+  min-width: 86px;
+  padding: 10px 16px;
+  background: #285de0;
+  color: white;
+}
+
+.primary:hover { background: #1d4dc3; }
+.primary:disabled { cursor: wait; opacity: .65; }
+
+.help, .refresh-note, .footnote {
+  color: #65738d;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.help { margin: 7px 0 0; }
+
+.message {
+  min-height: 16px;
+  margin: 5px 0 0;
+  color: #18714a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.message.error { color: #b42318; }
+.message.notice { color: #8a5a00; }
+
+.secondary {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px 14px;
+  border: 1px solid #d5deec;
+  background: white;
+  color: #273957;
+}
+
+.secondary:hover { background: #f6f8fc; }
+
+.refresh-note {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.footnote {
+  margin: 9px 0 0;
+  font-size: 10px;
+  text-align: center;
+}

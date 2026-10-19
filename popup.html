@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NextDNS Detailed Analytics</title>
+    <link rel="stylesheet" href="popup.css">
+  </head>
+  <body>
+    <main class="panel">
+      <header class="heading">
+        <div class="mark" aria-hidden="true">N</div>
+        <div>
+          <p class="eyebrow">UNOFFICIAL EXTENSION</p>
+          <h1>NextDNS Detailed Analytics</h1>
+        </div>
+      </header>
+
+      <p class="intro">Choose how many entries the NextDNS dashboard requests for analytics.</p>
+
+      <section class="current" aria-live="polite">
+        <span>Current configured limit</span>
+        <strong id="current-limit">50</strong>
+      </section>
+
+      <form id="limit-form" novalidate>
+        <label for="limit-input">Analytics entry limit</label>
+        <div class="input-row">
+          <input
+            id="limit-input"
+            name="limit"
+            type="number"
+            min="1"
+            step="1"
+            inputmode="numeric"
+            value="50"
+            required
+            aria-describedby="limit-help form-message"
+          >
+          <button class="primary" type="submit">Apply</button>
+        </div>
+        <p id="limit-help" class="help">Enter a positive whole number.</p>
+        <p id="form-message" class="message" role="status" aria-live="polite"></p>
+      </form>
+
+      <button id="open-nextdns" class="secondary" type="button">Open NextDNS</button>
+
+      <p class="refresh-note">After changing the limit, refresh the NextDNS dashboard to reload analytics.</p>
+      <p class="footnote">This extension is not affiliated with or endorsed by NextDNS.</p>
+    </main>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
